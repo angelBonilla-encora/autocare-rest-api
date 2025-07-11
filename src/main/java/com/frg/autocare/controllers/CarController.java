@@ -18,17 +18,20 @@
 package com.frg.autocare.controllers;
 
 import com.frg.autocare.dto.CarDTO;
+import com.frg.autocare.exception.ErrorResponse;
 import com.frg.autocare.services.CarService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/v1/cars")
@@ -43,8 +46,29 @@ public class CarController {
       summary = "Get all cars",
       description = "Retrieve a list of all cars with their details")
   @ApiResponse(responseCode = "200", description = "List of cars retrieved successfully")
-  public ResponseEntity<List<CarDTO>> getAllCars() {
-    return ResponseEntity.ok(carService.getAllCars());
+  public ResponseEntity<?> getAllCars(
+      @RequestParam(required = false) String make,
+      @RequestParam(required = false) String model,
+      @RequestParam(required = false) String owner,
+      @RequestParam(required = false) String maintainer,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size,
+      @RequestParam(defaultValue = "id") String sortBy,
+      @RequestParam(defaultValue = "ASC") String sortDir) {
+    Sort.Direction direction;
+    try {
+      direction = Sort.Direction.fromString(sortDir.toUpperCase());
+    } catch (IllegalArgumentException ex) {
+      return ResponseEntity
+              .status(HttpStatus.BAD_REQUEST)
+              .body(new ErrorResponse(
+                      400,
+                      "Invalid sort direction: " + sortDir + ". Use 'ASC' or 'DESC'.",
+                      "/api/v1/cars"));
+    }
+    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+    return ResponseEntity.ok(carService.getAllCars(make, model, owner, maintainer, pageable));
   }
 
   @GetMapping("/{id}")
