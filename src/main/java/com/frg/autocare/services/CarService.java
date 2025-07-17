@@ -18,6 +18,7 @@
 package com.frg.autocare.services;
 
 import com.frg.autocare.dto.CarDTO;
+import com.frg.autocare.dto.CarFilterDTO;
 import com.frg.autocare.dto.ToolDTO;
 import com.frg.autocare.entities.Car;
 import com.frg.autocare.entities.Tool;
@@ -43,10 +44,15 @@ public class CarService {
 
   @Transactional(readOnly = true)
   public Page<CarDTO> getAllCars(
-      String make, String model, String owner, String maintainer, Pageable pageable) {
-    Specification<Car> spec = CarSpecification.withFilters(make, model, owner, maintainer);
-    Page<Car> cars = carRepository.findAll(spec, pageable);
-    return cars.map(this::mapToCarDTO);
+          CarFilterDTO carFilter, Pageable pageable) {
+      return carRepository.findAll(CarSpecification.withFilters(
+              carFilter.make(),
+              carFilter.model(),
+              carFilter.owner(),
+              carFilter.maintainer()),
+              pageable
+      ).map(this::mapToCarDTO);
+
   }
 
   @Transactional(readOnly = true)

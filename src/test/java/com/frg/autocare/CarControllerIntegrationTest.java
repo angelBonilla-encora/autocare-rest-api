@@ -88,10 +88,9 @@ public class CarControllerIntegrationTest {
         mockMvc.perform(get("/api/v1/cars")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(3)))
-                .andExpect(jsonPath("$.content[0].make", is("Toyota")))
-                .andExpect(jsonPath("$.content[1].make", is("Honda")))
-                .andExpect(jsonPath("$.totalElements", is(3)));
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$.[0].make", is("Toyota")))
+                .andExpect(jsonPath("$.[1].make", is("Honda")));
     }
 
     @Test
@@ -101,9 +100,9 @@ public class CarControllerIntegrationTest {
                         .param("maintainer", "Service Center A")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(2)))
-                .andExpect(jsonPath("$.content[*].make", everyItem(is("Toyota"))))
-                .andExpect(jsonPath("$.content[*].maintainerName", everyItem(is("Service Center A"))));
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$.[*].make", everyItem(is("Toyota"))))
+                .andExpect(jsonPath("$.[*].maintainerName", everyItem(is("Service Center A"))));
     }
 
     @Test
@@ -113,7 +112,7 @@ public class CarControllerIntegrationTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message", containsString("Invalid sort direction")))
+                .andExpect(jsonPath("$.message", containsString("Invalid value 'INVALID' for parameter 'sortDir'")))
                 .andExpect(jsonPath("$.path").value("/api/v1/cars"));
     }
 }

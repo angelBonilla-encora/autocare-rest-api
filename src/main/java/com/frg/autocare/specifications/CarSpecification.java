@@ -1,58 +1,40 @@
+
 package com.frg.autocare.specifications;
 
 import com.frg.autocare.entities.Car;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
+import jakarta.persistence.criteria.Join;
+
 public class CarSpecification {
-  public static Specification<Car> hasMake(String make) {
-    return (root, query, criteriaBuilder) -> {
-      if (!StringUtils.hasText(make)) {
-        return criteriaBuilder.conjunction();
+
+  private static Specification<Car> hasAttribute(
+          String value,
+          String attribute,
+          boolean isJoin,
+          String joinField) {
+
+    return (root, query, cb) -> {
+      if (!StringUtils.hasText(value)) {
+        return cb.conjunction();
       }
-      return criteriaBuilder.like(
-          criteriaBuilder.lower(root.get("make")), "%" + make.toLowerCase() + "%");
+
+      if (isJoin) {
+        Join<Object, Object> join = root.join(joinField);
+        return cb.like(cb.lower(join.get(attribute)), "%" + value.toLowerCase() + "%");
+      }
+
+      return cb.like(cb.lower(root.get(attribute)), "%" + value.toLowerCase() + "%");
     };
   }
-
-  public static Specification<Car> hasModel(String model) {
-    return (root, query, criteriaBuilder) -> {
-      if (!StringUtils.hasText(model)) {
-        return criteriaBuilder.conjunction();
-      }
-      return criteriaBuilder.like(
-          criteriaBuilder.lower(root.get("model")), "%" + model.toLowerCase() + "%");
-    };
-  }
-
-  public static Specification<Car> hasOwner(String owner) {
-    return (root, query, criteriaBuilder) -> {
-      if (!StringUtils.hasText(owner)) {
-        return criteriaBuilder.conjunction();
-      }
-      var joinCustomer = root.join("customer");
-      return criteriaBuilder.like(
-              criteriaBuilder.lower(joinCustomer.get("name")), "%" + owner.toLowerCase() + "%");
-    };
-  }
-
-  public static Specification<Car> hasMaintainer(String maintainer) {
-    return (root, query, criteriaBuilder) -> {
-      if (!StringUtils.hasText(maintainer)) {
-        return criteriaBuilder.conjunction();
-      }
-      var joinMaintainer = root.join("maintainer");
-      return criteriaBuilder.like(
-              criteriaBuilder.lower(joinMaintainer.get("name")), "%" + maintainer.toLowerCase() + "%");
-    };
-  }
-
 
   public static Specification<Car> withFilters(
-      String make, String model, String owner, String maintainer) {
-    return Specification.where(hasMake(make))
-        .and(hasModel(model))
-        .and(hasOwner(owner))
-        .and(hasMaintainer(maintainer));
+          String make, String model, String owner, String maintainer) {
+    return Specification
+            .where(hasAttribute(make, "make", false, null))
+            .and(hasAttribute(model, "model", false, null))
+            .and(hasAttribute(owner, "name", true, "customer"))
+            .and(hasAttribute(maintainer, "name", true, "maintainer"));
   }
 }
